@@ -25,8 +25,9 @@ When the VM boots:
 
 The service exposes endpoints such as:
 
-    GET /
+    GET /health
     POST /api/contact
+
 
 This phase focuses on correctness, clarity, and stability before adding external integrations such as email or storage.
 
@@ -41,7 +42,7 @@ This phase focuses on correctness, clarity, and stability before adding external
 - Logging is currently console-based (will move to structured logs later)  
 
 Backend deployments are automated using GitHub Actions.  
-When code is pushed to the `main` branch, CI verifies the app loads correctly, then a deploy workflow connects securely to the VM, pulls the latest code, and restarts the backend service.
+When code is pushed to the main branch, CI verifies the app loads correctly, deploys to the VM, restarts the service, and confirms it is healthy using the `/health` endpoint.
 
 
 
@@ -49,11 +50,16 @@ When code is pushed to the `main` branch, CI verifies the app loads correctly, t
 
 ## 🔌 API Details
 
-### /
+### `/health`
 
-Basic health endpoint confirming the backend is running.
+Returns a simple JSON response confirming the backend is running:
 
-### /api/contact
+    { "status": "ok" }
+
+GitHub Actions uses this endpoint after deployment to verify the service is healthy.
+
+
+### `/api/contact`
 
 Accepts JSON payload:
 
@@ -65,10 +71,10 @@ Accepts JSON payload:
 
 Validation rules:
 
-- All fields are required  
-- Whitespace-only values are rejected  
+- All fields are required
+- Whitespace-only values are rejected
 
-Bad request response:
+Bad request response (missing field):
 
     { "error": "All fields are required" }
 
