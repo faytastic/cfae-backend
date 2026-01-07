@@ -33,6 +33,14 @@ jobs:
             git checkout main &&
             git reset --hard origin/main
           "
+      - name: Install systemd service
+        run: |
+          scp server/cfae-backend.service cfae-vm:/tmp/cfae-backend.service
+          ssh cfae-vm "
+            sudo mv /tmp/cfae-backend.service /etc/systemd/system/cfae-backend.service &&
+            sudo systemctl daemon-reload &&
+            sudo systemctl enable cfae-backend
+          "
 
       - name: Restart backend service
         run: |
