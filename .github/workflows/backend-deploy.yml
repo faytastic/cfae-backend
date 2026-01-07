@@ -16,7 +16,7 @@ jobs:
       - name: Set up SSH
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.CFAE_DEPLOY_KEY }}" > ~/.ssh/cfae_deploy_key
+          echo "${{ secrets.CFAE_BACKEND_DEPLOY_KEY }}" > ~/.ssh/cfae_deploy_key
           chmod 600 ~/.ssh/cfae_deploy_key
 
           echo "Host cfae-vm
