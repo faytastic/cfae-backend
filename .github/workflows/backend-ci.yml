@@ -24,7 +24,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Sanity check: app imports
+      - name: "Sanity check: app imports"
         run: |
           python -c "from app import create_app; app = create_app(); print('App loaded OK')"
+
 
