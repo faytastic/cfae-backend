@@ -9,7 +9,7 @@ Over time, this backend will expand to include email notifications, data storage
 
 This is the source code for the CFAE backend.  
 It is a lightweight Flask API hosted on an OCI compute instance.  
-Infrastructure is managed separately, and backend deployments are currently manual while the service is evolving.
+Infrastructure is managed separately, and backend deployments are handled through GitHub Actions.
 
 ---
 
@@ -20,7 +20,7 @@ This backend runs as a persistent service on the OCI VM.
 When the VM boots:
 
 1. systemd automatically starts Gunicorn  
-2. Gunicorn loads the Flask application (app.py)  
+2. Gunicorn loads the Flask application using our factory pattern
 3. Nginx (or a future reverse proxy) routes API traffic to the backend  
 
 The service exposes endpoints such as:
@@ -40,8 +40,9 @@ This phase focuses on correctness, clarity, and stability before adding external
 - Invalid requests return HTTP 400 responses  
 - Logging is currently console-based (will move to structured logs later)  
 
-Manual SSH may be used temporarily for updates or troubleshooting.  
-Backend deployments are currently manual while the service evolves. CI/CD automation is planned.
+Backend deployments are automated using GitHub Actions.  
+When code is pushed to the `main` branch, CI verifies the app loads correctly, then a deploy workflow connects securely to the VM, pulls the latest code, and restarts the backend service.
+
 
 
 ---
@@ -80,16 +81,27 @@ Successful response:
 
 ---
 
-## 🔄 Deployment (current workflow)
+## 🔄 Deployment (CI/CD)
 
-Until CI/CD is added, backend updates are deployed manually:
+The backend deploys automatically on every push to the `main` branch.
 
-    cd ~/cfae-backend
-    git pull
-    sudo systemctl restart cfae-backend
+GitHub Actions runs two workflows:
 
-The service restart ensures the latest code is loaded into Gunicorn.  
-Once backend features stabilize, deployment will move to a controlled CI/CD pipeline similar to the frontend.
+1. **Backend CI**
+   - Installs dependencies
+   - Imports the Flask app to confirm it initializes successfully
+   - Fails early if configuration or imports are broken
+
+2. **Backend Deploy**
+   - Connects securely to the OCI VM using an SSH key stored in GitHub Secrets
+   - Syncs the code into `/home/opc/cfae-backend`
+   - Restarts the backend service via systemd:
+
+     `sudo systemctl restart cfae-backend`
+
+No manual SSH access is required.  
+If a deploy fails, the running version remains untouched.
+
 
 ---
 
@@ -126,9 +138,9 @@ Planned backend enhancements:
 
 - Email notifications on form submission  
 - Persistent storage (database or object storage)  
-- Environment variable configuration  
+- Environment variable configuration
+- Automated API tests that run in CI before deployment
 - Structured logging  
-- CI/CD pipeline for backend deployments  
 - Monitoring and error tracking  
 - Authentication for administrative endpoints  
 
@@ -154,13 +166,13 @@ Planned backend enhancements:
 
 ## ♻️ Rollback
 
-If a backend change causes issues:
+If a deployment causes issues:
 
-1. Revert to a previous commit in GitHub  
-2. Pull the previous version on the VM  
-3. Restart the backend service  
+1. Revert or roll back the commit in GitHub  
+2. Push the revert to `main`  
+3. GitHub Actions redeploys the previous working version automatically
 
-    git checkout <previous_commit>
+If emergency access is needed, the service can still be restarted manually:
+
     sudo systemctl restart cfae-backend
 
-Rollback stabilizes production while fixes are prepared.
