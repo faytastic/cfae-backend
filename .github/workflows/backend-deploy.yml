@@ -37,3 +37,18 @@ jobs:
       - name: Restart backend service
         run: |
           ssh cfae-vm "sudo systemctl restart cfae-backend"
+      
+      - name: Verify backend is running
+        run: |
+          echo "Checking /api/contact endpoint"
+          for i in {1..5}; do
+            STATUS=$(ssh cfae-vm "curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:5000/api/contact")
+            if [ "$STATUS" = "400" ] || [ "$STATUS" = "200" ]; then
+              echo "Backend responded successfully: $STATUS"
+              exit 0
+            fi
+            echo "Attempt $i failed, retrying in 5s..."
+            sleep 5
+          done
+          echo "Backend health check failed"
+          exit 1
