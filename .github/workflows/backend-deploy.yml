@@ -40,10 +40,10 @@ jobs:
       
       - name: Verify backend is running
         run: |
-          echo "Checking /api/contact endpoint"
+          echo "Checking /health endpoint"
           for i in {1..5}; do
-            STATUS=$(ssh cfae-vm "curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:5000/api/contact")
-            if [ "$STATUS" = "400" ] || [ "$STATUS" = "200" ]; then
+            STATUS=$(ssh cfae-vm "curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:5000/health")
+            if [ "$STATUS" = "200" ]; then
               echo "Backend responded successfully: $STATUS"
               exit 0
             fi
@@ -52,3 +52,4 @@ jobs:
           done
           echo "Backend health check failed"
           exit 1
+
