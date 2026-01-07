@@ -6,6 +6,10 @@ def register_routes(app):
     def home():
         return "CFAE backend is running."
 
+    @app.route("/health", methods=["GET"])
+    def health():
+        return jsonify({"status": "ok"}), 200
+
     @app.route("/api/contact", methods=["POST"])
     def contact():
         data = request.json or {}
@@ -23,3 +27,4 @@ def register_routes(app):
         print(f"Message: {message}")
 
         return jsonify({"status": "ok", "message": "Form received"})
+
