@@ -1,0 +1,14 @@
+[Unit]
+Description=CFAE Flask Backend
+After=network.target
+
+[Service]
+User=opc
+Group=opc
+WorkingDirectory=/home/opc/cfae-backend
+Environment="PATH=/home/opc/cfae-backend/venv/bin"
+ExecStart=/home/opc/cfae-backend/venv/bin/gunicorn -b 0.0.0.0:5000 wsgi:app --chdir /home/opc/cfae-backend
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
