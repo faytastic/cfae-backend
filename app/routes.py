@@ -8,8 +8,7 @@ def register_routes(app):
 
     @app.route("/health", methods=["GET"])
     def health():
-        return "broken", 500
-
+        return jsonify({"status": "ok"}), 200
 
     @app.route("/api/contact", methods=["POST"])
     def contact():
@@ -28,4 +27,3 @@ def register_routes(app):
         print(f"Message: {message}")
 
         return jsonify({"status": "ok", "message": "Form received"})
-
