@@ -39,7 +39,8 @@ This phase focuses on correctness, clarity, and stability before adding external
 - Requests are handled by Gunicorn  
 - Input is validated before processing  
 - Invalid requests return HTTP 400 responses  
-- Logging is currently console-based (will move to structured logs later)  
+- Logging is currently console-based (will move to structured logs later)
+- Deployments are health-gated with automatic rollback on failure
 
 Backend deployments are automated using GitHub Actions.  
 When code is pushed to the main branch, CI verifies the app loads correctly, deploys to the VM, restarts the service, and confirms it is healthy using the `/health` endpoint.
@@ -56,7 +57,9 @@ Returns a simple JSON response confirming the backend is running:
 
     { "status": "ok" }
 
-GitHub Actions uses this endpoint after deployment to verify the service is healthy.
+GitHub Actions uses this endpoint after deployment to verify the service is healthy.  
+The endpoint is implemented in the backend route layer and is intended solely for deployment verification.
+
 
 
 ### `/api/contact`
@@ -106,7 +109,7 @@ GitHub Actions runs two workflows:
      `sudo systemctl restart cfae-backend`
 
 No manual SSH access is required.  
-If a deploy fails, the running version remains untouched.
+If a deploy fails its health check, the backend automatically rolls back to the last known good version and continues running without manual intervention.
 
 
 ---
@@ -170,15 +173,24 @@ Planned backend enhancements:
 
 ---
 
-## ♻️ Rollback
+## ♻️ Automatic Rollback
 
-If a deployment causes issues:
+Backend deployments are protected by an automatic rollback mechanism.
 
-1. Revert or roll back the commit in GitHub  
-2. Push the revert to `main`  
-3. GitHub Actions redeploys the previous working version automatically
+During each deploy:
 
-If emergency access is needed, the service can still be restarted manually:
+1. The currently running commit hash is recorded as the last known good version
+2. The new code is deployed and the service is restarted
+3. GitHub Actions calls the `/health` endpoint to verify the service
 
-    sudo systemctl restart cfae-backend
+If the health check fails:
+- The backend automatically checks out the previous known good commit
+- The service is restarted again
+- The deployment is marked as failed in GitHub Actions
+- The backend continues running on the last healthy version
 
+The currently trusted version is tracked on the VM in:
+
+    /home/opc/cfae-backend/.last_known_good_commit
+
+This ensures failed deployments do not take the service offline.
