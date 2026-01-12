@@ -40,7 +40,7 @@ This phase focuses on correctness, clarity, and stability before adding external
 - Input is validated before processing  
 - Invalid requests return HTTP 400 responses  
 - Logging is currently console-based (will move to structured logs later)
-- Deployments are health-gated with automatic rollback on failure
+- Deployments are health-gated via the `/health` endpoint
 
 Backend deployments are automated using GitHub Actions.  
 When code is pushed to the main branch, CI verifies the app loads correctly, deploys to the VM, restarts the service, and confirms it is healthy using the `/health` endpoint.
@@ -58,7 +58,7 @@ Returns a simple JSON response confirming the backend is running:
     { "status": "ok" }
 
 GitHub Actions uses this endpoint after deployment to verify the service is healthy.  
-The endpoint is implemented in the backend route layer and is intended solely for deployment verification.
+The endpoint is implemented in the backend route layer and exists solely for deployment health checks.
 
 
 
@@ -131,13 +131,11 @@ Structured log files will be added as the system grows.
 
 ## 🔐 Security Notes
 
-- No secrets are stored in code  
-- API accepts only JSON payloads  
-- HTTPS is enforced at the infrastructure level  
-- .gitignore prevents sensitive or unnecessary files from being committed  
-- The VM authenticates to GitHub securely using SSH keys  
+- No secrets are stored in code or committed to Git  
+- Secrets are injected at runtime via GitHub Actions and systemd  
+- Production requires a valid `SECRET_KEY` and fails fast if missing  
+- HTTPS is enforced at the infrastructure level
 
-Future enhancements include env-based configuration and secret management.
 
 ---
 
@@ -147,8 +145,7 @@ Planned backend enhancements:
 
 - Email notifications on form submission  
 - Persistent storage (database or object storage)  
-- Environment variable configuration
-- Automated API tests that run in CI before deployment
+- Automated API tests (request/response validation) that run in CI before deployment
 - Structured logging  
 - Monitoring and error tracking  
 - Authentication for administrative endpoints  
