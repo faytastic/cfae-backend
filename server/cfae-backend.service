@@ -8,6 +8,7 @@ Group=opc
 WorkingDirectory=/home/opc/cfae-backend
 Environment="PATH=/home/opc/cfae-backend/venv/bin"
 Environment="APP_ENV=production"
+Environment="SECRET_KEY=${CFAE_SECRET_KEY}"
 ExecStart=/home/opc/cfae-backend/venv/bin/gunicorn -b 0.0.0.0:5000 wsgi:app --chdir /home/opc/cfae-backend
 Restart=always
 
