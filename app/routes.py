@@ -8,7 +8,8 @@ def register_routes(app):
 
     @app.route("/health", methods=["GET"])
     def health():
-        return jsonify({"status": "ok"}), 200
+        return "broken", 500
+
 
     @app.route("/api/contact", methods=["POST"])
     def contact():
