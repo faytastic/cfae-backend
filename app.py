@@ -1,16 +1,10 @@
 from flask import Flask
+from app.routes import register_routes
 
 def create_app():
     app = Flask(__name__)
-
-    @app.route("/api/contact", methods=["GET"])
-    def health_check():
-        return {"status": "ok"}, 200
-
+    register_routes(app)
     return app
-
-
-app = create_app()
 
 
 
