@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template
-from app.db import get_connection
+from .db import get_connection
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 
