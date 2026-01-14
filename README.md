@@ -5,7 +5,7 @@ Backend service built with Flask.
 Receives contact form submissions, validates data, and returns structured responses.
 
 This service currently runs on the same OCI virtual machine as the frontend, managed by Gunicorn and systemd.  
-Over time, this backend will expand to include email notifications, data storage, and automated deployment.
+This backend currently stores contact form submissions in an Oracle Autonomous Database (ATP). Over time, it will expand to include email notifications and additional automation.
 
 This is the source code for the CFAE backend.  
 It is a lightweight Flask API hosted on an OCI compute instance.  
@@ -19,9 +19,9 @@ This backend runs as a persistent service on the OCI VM.
 
 When the VM boots:
 
-1. systemd automatically starts Gunicorn  
+1. systemd automatically starts the backend service (Gunicorn) 
 2. Gunicorn loads the Flask application using our factory pattern
-3. Nginx (or a future reverse proxy) routes API traffic to the backend  
+3. Nginx routes API traffic to the backend
 
 The service exposes endpoints such as:
 
@@ -29,7 +29,7 @@ The service exposes endpoints such as:
     POST /api/contact
 
 
-This phase focuses on correctness, clarity, and stability before adding external integrations such as email or storage.
+This phase focuses on correctness, clarity, and stability before adding external integrations such as email.
 
 ---
 
@@ -39,13 +39,12 @@ This phase focuses on correctness, clarity, and stability before adding external
 - Requests are handled by Gunicorn  
 - Input is validated before processing  
 - Invalid requests return HTTP 400 responses  
-- Logging is currently console-based (will move to structured logs later)
+- Logging is currently console-based and viewable via journalctl (structured logs can be added later)
 - Deployments are health-gated via the `/health` endpoint
+- Contact form submissions are stored in Oracle Autonomous Database (ATP)
 
 Backend deployments are automated using GitHub Actions.  
 When code is pushed to the main branch, CI verifies the app loads correctly, deploys to the VM, restarts the service, and confirms it is healthy using the `/health` endpoint.
-
-
 
 ---
 
@@ -83,18 +82,46 @@ Bad request response (missing field):
 
 Successful response:
 
-    {
-      "status": "ok",
-      "message": "Form received"
-    }
+On success, the submission is inserted into the `CFAE_CONTACTS` table in Oracle ATP.
 
+```json
+{
+  "status": "ok",
+  "message": "Saved to DB"
+}
+```
 ---
+
+## 🗄 Database (Oracle ATP)
+
+Contact form submissions are stored in an **Oracle Autonomous Database (ATP)** (Always Free tier).
+
+**Primary table:**
+
+- `CFAE_CONTACTS`
+
+**Schema:**
+
+- `ID` (NUMBER, identity primary key)
+- `NAME` (VARCHAR2)
+- `EMAIL` (VARCHAR2)
+- `MESSAGE` (CLOB)
+- `CREATED_AT` (TIMESTAMP)
+
+**How data is written:**
+
+- `POST /api/contact` validates the request and inserts the submission into `CFAE_CONTACTS`
+
+**VM configuration notes (not committed to Git):**
+
+- DB wallet lives on the VM at: `/home/opc/wallets/cfae-atp/`
+- DB credentials are provided via a systemd environment variable (not stored in code)
 
 ## 🔄 Deployment (CI/CD)
 
 The backend deploys automatically on every push to the `main` branch.
 
-GitHub Actions runs two workflows:
+GitHub Actions runs CI/CD workflows:
 
 1. **Backend CI**
    - Installs dependencies
@@ -109,8 +136,7 @@ GitHub Actions runs two workflows:
      `sudo systemctl restart cfae-backend`
 
 No manual SSH access is required.  
-If a deploy fails its health check, the backend automatically rolls back to the last known good version and continues running without manual intervention.
-
+If a deploy fails its health check, the workflow can roll back to the last known good version and keep the service running.
 
 ---
 
@@ -132,8 +158,8 @@ Structured log files will be added as the system grows.
 ## 🔐 Security Notes
 
 - No secrets are stored in code or committed to Git  
-- Secrets are injected at runtime via GitHub Actions and systemd  
-- Production requires a valid `SECRET_KEY` and fails fast if missing  
+- Runtime configuration is provided via systemd environment variables (for example, DB credentials).
+- Oracle ATP connectivity is configured using an Autonomous Database wallet stored on the VM with restricted permissions.
 - HTTPS is enforced at the infrastructure level
 
 
@@ -143,8 +169,8 @@ Structured log files will be added as the system grows.
 
 Planned backend enhancements:
 
-- Email notifications on form submission  
-- Persistent storage (database or object storage)  
+- Email notifications on form submission (auto email confirmation + internal notification)
+- Expand database usage (admin views, querying, retention policies)
 - Automated API tests (request/response validation) that run in CI before deployment
 - Structured logging  
 - Monitoring and error tracking  
@@ -167,6 +193,8 @@ Planned backend enhancements:
 - Backend repo: /home/opc/cfae-backend  
 - Backend service runs via Gunicorn under systemd  
 - Logs available via journalctl  
+- Oracle ATP wallet (restricted permissions): /home/opc/wallets/cfae-atp/
+- systemd env override (DB password lives here): /etc/systemd/system/cfae-backend.service.d/env.conf
 
 ---
 
