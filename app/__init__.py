@@ -1,7 +1,8 @@
 from flask import Flask
 
 def create_app():
-    app = Flask(__name__)
+    app = Flask(__name__, template_folder="../templates")
+
 
     # Import routes after app is created
     from .routes import register_routes
