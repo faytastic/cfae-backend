@@ -27,7 +27,7 @@ The service exposes endpoints such as:
 
     GET /health
     POST /api/contact
-
+    GET /admin/submissions
 
 This phase focuses on correctness, clarity, and stability before adding external integrations such as email.
 
@@ -116,6 +116,37 @@ Contact form submissions are stored in an **Oracle Autonomous Database (ATP)** (
 
 - DB wallet lives on the VM at: `/home/opc/wallets/cfae-atp/`
 - DB credentials are provided via a systemd environment variable (not stored in code)
+
+---
+### `/admin/submissions`
+
+Displays a simple admin page showing the most recent contact form entries stored in Oracle ATP.
+
+- Returns latest 50 records from `CFAE_CONTACTS`
+- Intended for internal validation/testing (authentication can be added later)
+
+---
+
+## 📄 HTML Template Rendering
+
+This admin page is rendered using Flask templates.
+
+Template file:
+
+    templates/submissions.html
+
+Because templates live **outside** the `app/` folder in this repo, Flask is configured like this:
+
+    app = Flask(__name__, template_folder="../templates")
+
+This allows:
+
+    GET /admin/submissions
+
+to successfully render:
+
+    submissions.html
+---
 
 ## 🔄 Deployment (CI/CD)
 
