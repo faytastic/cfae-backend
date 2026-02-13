@@ -1,3 +1,4 @@
+from app.db import get_connection
 from flask import request, jsonify
 
 def register_routes(app):
@@ -21,33 +22,18 @@ def register_routes(app):
             return jsonify({"error": "All fields are required"}), 400
 
         try:
-            import oracledb
-            import os
+            conn = get_connection()
 
-            pw = os.environ.get("CFAEATP_ADMIN_PASSWORD")
-            if not pw:
-                return jsonify({"error": "DB password not configured"}), 500
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    INSERT INTO cfae_contacts (name, email, message)
+                    VALUES (:1, :2, :3)
+                    """,
+                    [name, email, message]
+                )
 
-            conn = oracledb.connect(
-                user="ADMIN",
-                password=pw,
-                dsn="cfaeatp_low",
-                config_dir="/home/opc/wallets/cfae-atp",
-                tcp_connect_timeout=5,
-                retry_count=0
-            )
-
-            cur = conn.cursor()
-            cur.execute(
-                """
-                INSERT INTO cfae_contacts (name, email, message)
-                VALUES (:1, :2, :3)
-                """,
-                [name, email, message]
-            )
             conn.commit()
-
-            cur.close()
             conn.close()
 
         except Exception as e:
@@ -55,4 +41,3 @@ def register_routes(app):
             return jsonify({"error": "DB insert failed"}), 500
 
         return jsonify({"status": "ok", "message": "Saved to DB"}), 200
-
