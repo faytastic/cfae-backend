@@ -3,19 +3,19 @@ import oracledb
 
 
 def get_connection():
-    wallet_dir = os.getenv("CFAEATP_WALLET_DIR", "/home/opc/wallets/cfae-atp")
-    admin_password = os.getenv("CFAEATP_ADMIN_PASSWORD")
+    dsn = os.getenv("CFAEATP_DSN")
+    password = os.getenv("CFAEATP_ADMIN_PASSWORD")
+    user = os.getenv("CFAEATP_USER", "ADMIN")
 
-    if not admin_password:
+    if not dsn:
+        raise RuntimeError("Missing env var: CFAEATP_DSN")
+    if not password:
         raise RuntimeError("Missing env var: CFAEATP_ADMIN_PASSWORD")
 
-    dsn = os.getenv("CFAEATP_DSN", "cfaeatp_high")
-
+    # Walletless TLS: do not use config_dir, wallet_location, wallet_password, or TNS aliases.
     return oracledb.connect(
-        user="ADMIN",
-        password=admin_password,
+        user=user,
+        password=password,
         dsn=dsn,
-        config_dir=wallet_dir,
-        wallet_location=wallet_dir,
-        wallet_password=admin_password,
+        ssl_server_dn_match=True,
     )
