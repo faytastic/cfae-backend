@@ -5,7 +5,8 @@ Backend service built with Flask.
 Receives contact form submissions, validates data, and returns structured responses.
 
 This service currently runs on the same OCI virtual machine as the frontend, managed by Gunicorn and systemd.  
-This backend currently stores contact form submissions in an Oracle Autonomous Database (ATP). Over time, it will expand to include email notifications and additional automation.
+This backend currently stores contact form submissions in an Oracle Autonomous Database Serverless (ATP).
+
 
 This is the source code for the CFAE backend.  
 It is a lightweight Flask API hosted on an OCI compute instance.  
@@ -95,6 +96,9 @@ On success, the submission is inserted into the `CFAE_CONTACTS` table in Oracle 
 ## 🗄 Database (Oracle ATP)
 
 Contact form submissions are stored in an **Oracle Autonomous Database (ATP)** (Always Free tier).
+The backend originally used an mTLS wallet-based connection and was later migrated to walletless TLS to simplify certificate management and align with Oracle best practices.
+This change reduced operational complexity by removing wallet distribution and certificate rotation requirements.
+
 
 **Primary table:**
 
@@ -114,8 +118,12 @@ Contact form submissions are stored in an **Oracle Autonomous Database (ATP)** (
 
 **VM configuration notes (not committed to Git):**
 
-- DB wallet lives on the VM at: `/home/opc/wallets/cfae-atp/`
-- DB credentials are provided via a systemd environment variable (not stored in code)
+- Connection method: TLS (walletless, no Oracle wallet required)
+- DSN format: `tcps://adb.<region>.oraclecloud.com:1522/<service_name>`
+- DB credentials are provided via a systemd environment file on the VM (`/etc/cfae-backend.env`)
+- No `TNS_ADMIN`, wallet files, or `tnsnames.ora` are used
+
+This simplifies certificate management and aligns with Oracle’s recommended connection method for Autonomous Database.
 
 ---
 ### `/admin/submissions`
@@ -190,7 +198,7 @@ Structured log files will be added as the system grows.
 
 - No secrets are stored in code or committed to Git  
 - Runtime configuration is provided via systemd environment variables (for example, DB credentials).
-- Oracle ATP connectivity is configured using an Autonomous Database wallet stored on the VM with restricted permissions.
+- Oracle ATP connectivity uses TLS (walletless) with a TCPS connection string and database credentials supplied via systemd environment variables
 - HTTPS is enforced at the infrastructure level
 
 
@@ -224,8 +232,7 @@ Planned backend enhancements:
 - Backend repo: /home/opc/cfae-backend  
 - Backend service runs via Gunicorn under systemd  
 - Logs available via journalctl  
-- Oracle ATP wallet (restricted permissions): /home/opc/wallets/cfae-atp/
-- systemd env override (DB password lives here): /etc/systemd/system/cfae-backend.service.d/env.conf
+- systemd environment file (DB credentials): /etc/cfae-backend.env
 
 ---
 
