@@ -42,7 +42,7 @@ This phase focuses on correctness, clarity, and stability before adding external
 - Invalid requests return HTTP 400 responses  
 - Logging is currently console-based and viewable via journalctl (structured logs can be added later)
 - Deployments are health-gated via the `/health` endpoint
-- Contact form submissions are stored in Oracle Autonomous Database (ATP)
+- Contact form submissions are stored in Oracle Autonomous Database Serverless (ATP)
 
 Backend deployments are automated using GitHub Actions.  
 When code is pushed to the main branch, CI verifies the app loads correctly, deploys to the VM, restarts the service, and confirms it is healthy using the `/health` endpoint.
